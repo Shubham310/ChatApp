@@ -1,0 +1,92 @@
+
+
+    Hello <div id="xxx"> {{user.name}}</div>
+
+    <ul id="messages"></ul>
+    <form action="">
+      <input class="form-control" id="m" autocomplete="off" /><button class="btn btn-default">Send</button>
+    </form>
+    <div id="status"> </div>
+    <div id="online"></div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="http://code.jquery.com/jquery-1.11.1.js"></script>
+    <script>
+        var socket=io();
+        var namex = document.getElementById("xxx").innerHTML;
+        // tell server your username
+        socket.emit('add user', namex);
+        console.log(namex + 'is joined');
+
+        //server emits 'user joined'
+        socket.on('user Joined', function(data){
+            addParticipantsMessage(data);
+        })
+        
+        function addParticipantsMessage(data){
+            var message = '';
+            if(data.numUsers === 1){
+            message += "there is 1 particicpants";
+            }else{
+            message += "there are" + data.numUsers + "participants";
+            }
+            console.log(message);
+            
+            document.getElementById("online").innerHTML = data.list;
+            //console.log(data.list);
+            
+
+        }
+
+        $('form').submit(function(){
+            socket.emit('chat message', $('#m').val());
+            var message = $('#m').val();
+            $('#messages').append($('<li class="list-group-item list-group-item-danger">').text(message));
+            $('#m').val('');
+            return false;
+        });
+
+        socket.on('chat message', function(msg){
+            $('#messages').append($('<li class="list-group-item list-group-item-success">').text(msg));
+
+        });
+        
+        //console.log(namex);
+        $('#m').keyup(function(event){
+            //console.log(namex);
+            socket.emit('sender', namex);
+
+        });
+
+        socket.on('sender', function(data){
+            document.getElementById("status").innerHTML = '<b>'+ data +'</b> is typing... ';
+           // $('#status').append($('<li>'+ namex +' is typing '));
+            setTimeout(function(){
+                document.getElementById("status").innerHTML = '';
+            },3000);
+        });
+
+        //server emits 'user left'
+        socket.on('user left', function(data){
+            console.log(data.username + 'left');
+            removeParticipantsMessage(data);
+
+        })
+        function removeParticipantsMessage(data){
+            var message = '';
+            if(data.numUsers === 1){
+            message += "there is 1 particicpants";
+            }else{
+            message += "there are" + data.numUsers + "participants";
+            }
+            console.log(message);
+            
+            document.getElementById("online").innerHTML = data.list;
+            console.log(data.list);
+            
+
+        }
+
+
+
+    </script>
