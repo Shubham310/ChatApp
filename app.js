@@ -83,46 +83,53 @@ var http = require('http').Server(app);
 var io = require('socket.io')(http);
 
 var numUsers = 0;
-var list = [];
+users = {};
+
 io.on('connection', function(socket){
-  var addedUser = false;
+
   
   function disconnect(){
     console.log('client disconnected');
-    if(addedUser){
-      --numUsers;
-    var index = list.indexOf(socket.username);
-    list.splice(index, 1);
-      // echo globally that this user has left
-      socket.broadcast.emit('user left',{
-        username: socket.username,
-        numUsers: numUsers,
-        list: list
-      });
-    }
+    if(!socket.username) return;
+    delete users[socket.username];
+    
+    updateUsername();
   }
+
+
   console.log('user connected');
-  if(addedUser) return;
+ 
   //client emit 'add user'
 
-  socket.on('add user', function(username){
-    socket.username = username;
-    list.push(username);
-    ++numUsers;
-    addedUser=true;
-    console.log(socket.username + ' is ' + numUsers);
-    io.emit('user Joined', {
-      username : socket.username,
-      numUsers : numUsers,
-      list : list
-    });
+  socket.on('add user', function(data){
+    //console.log(data);
+    if(data.user_id in users){
+      updateUsername();
+      
+    }
+    else{
+      socket.user_id = data.user_id
+      socket.username = data.name;
+      
+      users[username] = socket.username;
+      users[user_id] = socket.user_id;
+      console.log(users);
+      updateUsername();
+    }
   });
+  function updateUsername(){
+    
+    io.emit('usernames', users);
+  }
 
 
   socket.on('disconnect', disconnect);
 //sending message
   socket.on('chat message', function(msg){
-    socket.broadcast.emit('chat message', msg);
+    socket.broadcast.emit('chat message', {
+      msg: msg,
+      nick:socket.username,
+    });
 
   });
 //who is typing
